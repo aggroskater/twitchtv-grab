@@ -50,13 +50,19 @@ WGET_LUA = find_executable(
 if not WGET_LUA:
     raise Exception("No usable Wget+Lua found.")
 
+###########################################################################
+# Determine if FFMPEG is available
+FFMPEG = false
+
+if not FFMPEG:
+    raise Exception("No usable ffmpeg found.")
 
 ###########################################################################
 # The version number of this pipeline definition.
 #
 # Update this each time you make a non-cosmetic change.
 # It will be added to the WARC files and reported to the tracker.
-VERSION = "20140809.02"
+VERSION = "20140809.03"
 USER_AGENT = 'ArchiveTeam'
 TRACKER_ID = 'twitchtv'
 TRACKER_HOST = 'tracker.archiveteam.org'
@@ -115,6 +121,58 @@ class PrepareDirectories(SimpleTask):
 
         open("%(item_dir)s/%(warc_file_base)s.warc.gz" % item, "w").close()
 
+
+# Will utilize ffmpeg to sample the downloaded item at its native resolution.
+# This sampling ought to be regular. That is, we should sample the same frame
+# in every period. Ex.) for a 30 fps video, we should always grab the Nth frame
+# at each second.
+#
+# This sampling rate should scale with the length of the video. A short video
+# might be afforded 2 frames per second, while an extra long video might only
+# be afforded 1 frame every 2 or 3 seconds.
+#
+# This high-fidelity data from snapShot is paired with the low-fidelity
+# data from shrinkRay to constitute a minimum viable dataset that might be
+# of use to someone in the future.
+class SnapShot(SimpleTask):
+    def __init__(self):
+        SimpleTask__init__(self, "SnapShot")
+
+    def process(self, item):
+
+    # assert that this item is flagged for sampling. If not,
+    # return immediately. We don't want to butcher uploads that
+    # have been determined to be worth saving in their original
+    # state.
+
+    # asdf
+
+# After taking a native-resolution snapshot of the video, 
+#
+# 1.) shrink it down to a small but visible resolution.
+# 2.) cut the framerate down to a low but still motion-preserving number.
+#
+# Both of these parameters ought to scale with the length of the
+# source video. A relatively short video might be able to get away with
+# 480p resolution, but a longer one should be cut down to 360p or even
+# 240p resolution. A short video might have a higher preserved framerate,
+# but not a longer video.
+#
+# This low-fidelity data from shrinkRay is paired with the high-fidelity
+# data from snapShot to constitute a minimum viable dataset that might be
+# of use to someone in the future.
+class ShrinkRay(SimpleTask):
+    def __init__(self):
+        SimpleTask.__init__(self, "ShrinkRay")
+
+    def process(self, item):
+
+    # assert that this item is flagged for sampling. If not,
+    # return immediately. We don't want to butcher uploads that
+    # have been determined to be worth saving in their original
+    # state.
+
+    # asdf
 
 class MoveFiles(SimpleTask):
     def __init__(self):
@@ -264,6 +322,8 @@ pipeline = Pipeline(
         },
         id_function=stats_id_function,
     ),
+    SnapShot(),
+    ShrinkRay(),
     MoveFiles(),
     LimitConcurrent(NumberConfigValue(min=1, max=4, default="1",
         name="shared:rsync_threads", title="Rsync threads",
