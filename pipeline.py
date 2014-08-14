@@ -171,7 +171,12 @@ class SnapShot(SimpleTask):
     if item_type == 'video-bulk':
         # At this point, wget has already dropped a .warc.gz file. Need to
         # unpack it.
-        
+
+            # Oh dear. It's looking like manipulating the warc file would
+            # require more careful deliberation than just "sample the data
+            # and put it back into the warc." Lots of metadata.
+            #
+            # http://warc.readthedocs.org/en/latest/
 
         # Now, create directories
 
