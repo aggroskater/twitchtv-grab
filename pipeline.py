@@ -52,10 +52,20 @@ if not WGET_LUA:
 
 ###########################################################################
 # Determine if FFMPEG is available
-FFMPEG = false
+FFMPEG = find_executable(
+    "ffmpeg",
+    ["ffmpeg version 2"],
+    [
+        "/usr/bin/ffmpeg",
+        "/usr/local/bin/ffmpeg",
+        "./ffmpeg"
+    ]
+)
 
 if not FFMPEG:
     raise Exception("No usable ffmpeg found.")
+
+exit();
 
 ###########################################################################
 # The version number of this pipeline definition.
@@ -131,8 +141,8 @@ class PrepareDirectories(SimpleTask):
 # might be afforded 2 frames per second, while an extra long video might only
 # be afforded 1 frame every 2 or 3 seconds.
 #
-# This high-fidelity data from snapShot is paired with the low-fidelity
-# data from shrinkRay to constitute a minimum viable dataset that might be
+# This high-fidelity data from SnapShot is paired with the low-fidelity
+# data from ShrinkRay to constitute a minimum viable dataset that might be
 # of use to someone in the future.
 class SnapShot(SimpleTask):
     def __init__(self):
@@ -144,8 +154,27 @@ class SnapShot(SimpleTask):
     # return immediately. We don't want to butcher uploads that
     # have been determined to be worth saving in their original
     # state.
+    #
+    # (Presumably, the tracker is tagging these items as something
+    # appropriate. Alternately, one could create a "Phase 3" grab
+    # and know for a fact that we are only receiving videos that
+    # should be sampled)
 
-    # asdf
+    item_name = item['item_name']
+    item_type, item_value = item_name.split(':', 1)
+
+    item['item_type'] = item_type
+    item['item_value'] = item_value
+
+    assert item_type in ('video-bulk')
+
+    if item_type == 'video-bulk':
+        #begin to sample the video with ffmpeg
+
+        #should probably also report compression statistics to the tracker
+
+    else
+        raise Exception('Unknown item.')
 
 # After taking a native-resolution snapshot of the video, 
 #
@@ -158,8 +187,8 @@ class SnapShot(SimpleTask):
 # 240p resolution. A short video might have a higher preserved framerate,
 # but not a longer video.
 #
-# This low-fidelity data from shrinkRay is paired with the high-fidelity
-# data from snapShot to constitute a minimum viable dataset that might be
+# This low-fidelity data from ShrinkRay is paired with the high-fidelity
+# data from SnapShot to constitute a minimum viable dataset that might be
 # of use to someone in the future.
 class ShrinkRay(SimpleTask):
     def __init__(self):
@@ -171,6 +200,28 @@ class ShrinkRay(SimpleTask):
     # return immediately. We don't want to butcher uploads that
     # have been determined to be worth saving in their original
     # state.
+    #
+    # (Presumably, the tracker is tagging these items as something
+    # appropriate. Alternately, one could create a "Phase 3" grab
+    # and know for a fact that we are only receiving videos that
+    # should be sampled)
+
+    item_name = item['item_name']
+    item_type, item_value = item_name.split(':', 1)
+
+    item['item_type'] = item_type
+    item['item_value'] = item_value
+
+    assert item_type in ('video-bulk')
+
+    if item_type == 'video-bulk':
+        #begin to shrink the video with ffmpeg
+
+        #should probably also report compression statistics to the tracker
+
+    else
+        raise Exception('Unknown item.')
+
 
     # asdf
 
@@ -180,6 +231,7 @@ class MoveFiles(SimpleTask):
 
     def process(self, item):
         # NEW for 2014! Check if wget was compiled with zlib support
+        # Shouldn't that happen _before_ the download is finished?
         if os.path.exists("%(item_dir)s/%(warc_file_base)s.warc"):
             raise Exception('Please compile wget with zlib support!')
 
