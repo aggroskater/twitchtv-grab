@@ -169,9 +169,23 @@ class SnapShot(SimpleTask):
     assert item_type in ('video-bulk')
 
     if item_type == 'video-bulk':
-        #begin to sample the video with ffmpeg
+        # At this point, wget has already dropped a .warc.gz file. Need to
+        # unpack it.
+        
 
-        #should probably also report compression statistics to the tracker
+        # Now, create directories
+
+        # begin to sample the video with ffmpeg
+        call(["ffmpeg", ""])
+
+        # assert that ffmpeg exited successfully
+
+        # delete original video
+
+        # repack .warc.gz (Figure out way to add warc header indicating that
+        # the archive contains only a sample and not the original content)
+
+        # should probably also report compression statistics to the tracker
 
     else
         raise Exception('Unknown item.')
