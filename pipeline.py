@@ -21,6 +21,7 @@ from seesaw.pipeline import Pipeline
 from seesaw.project import Project
 from seesaw.util import find_executable
 
+import warc #for manipulating warc files (re-open, sample video, re-close)
 
 # check the seesaw version
 if StrictVersion(seesaw.__version__) < StrictVersion("0.1.5"):
@@ -177,6 +178,14 @@ class SnapShot(SimpleTask):
             # and put it back into the warc." Lots of metadata.
             #
             # http://warc.readthedocs.org/en/latest/
+            #
+            # It looks like "WARC-Truncated" is the named field we would want
+            # according to the WARC spec:
+            #
+            # http://bibnum.bnf.fr/WARC/WARC_ISO_28500_version1_latestdraft.pdf
+            #
+            # Could rename whichever record in the .warc.gz holds the flv
+            # (or other video file)
 
         # Now, create directories
 
