@@ -53,6 +53,8 @@ if not WGET_LUA:
 
 ###########################################################################
 # Determine if FFMPEG is available
+# Should probably utilize an ffmpeg build (or source) distributed from the
+# repo to avoid nasty API incompatibilities between FFMPEG versions.
 FFMPEG = find_executable(
     "ffmpeg",
     ["ffmpeg version 2"],
@@ -133,21 +135,35 @@ class PrepareDirectories(SimpleTask):
         open("%(item_dir)s/%(warc_file_base)s.warc.gz" % item, "w").close()
 
 
-# Will utilize ffmpeg to sample the downloaded item at its native resolution.
-# This sampling ought to be regular. That is, we should sample the same frame
-# in every period. Ex.) for a 30 fps video, we should always grab the Nth frame
-# at each second.
+# Will utilize ffmpeg to sample the downloaded item.
+#
+# First, sample the video at its native resolution.  This sampling ought to be
+# regular. That is, we should sample the same frame in every period. Ex.) for a
+# 30 fps video, we should always grab the Nth frame at each second.
 #
 # This sampling rate should scale with the length of the video. A short video
 # might be afforded 2 frames per second, while an extra long video might only
 # be afforded 1 frame every 2 or 3 seconds.
 #
-# This high-fidelity data from SnapShot is paired with the low-fidelity
-# data from ShrinkRay to constitute a minimum viable dataset that might be
-# of use to someone in the future.
-class SnapShot(SimpleTask):
+# Second, after taking a native-resolution snapshot of the video, 
+#
+# 1.) shrink it down to a small but visible resolution.
+# 2.) cut the framerate down to a low but still motion-preserving number.
+#     (frame-dropping)
+#
+# Both of these parameters ought to scale with the length of the
+# source video. A relatively short video might be able to get away with
+# 480p resolution, but a longer one should be cut down to 360p or even
+# 240p resolution. A short video might have a higher preserved framerate,
+# but not a longer video.
+#
+# This high-fidelity data from taking native-resolution snapshots, in
+# combination with low-fidelity data from shrinking the resolution and dropping
+# frames, will (hopefully) constitute a minimum viable dataset that might be of
+# use to someone in the future.
+class Sample(SimpleTask):
     def __init__(self):
-        SimpleTask__init__(self, "SnapShot")
+        SimpleTask__init__(self, "Sample")
 
     def process(self, item):
 
@@ -169,6 +185,7 @@ class SnapShot(SimpleTask):
 
     assert item_type in ('video-bulk')
 
+    # unpack warc, call samplers, repack warc
     if item_type == 'video-bulk':
         # At this point, wget has already dropped a .warc.gz file. Need to
         # unpack it.
@@ -189,69 +206,38 @@ class SnapShot(SimpleTask):
 
         # Now, create directories
 
+        # Preparation done. Call SnapShot() and ShrinkRay() samplers.
+
+        # Sampling done. Delete original video
+
+        # repack .warc.gz 
+
+        # should probably also report compression statistics to the tracker
+
+    # Item type is not marked as "video-bulk" from tracker
+    else
+        raise Exception('Unknown item.')
+
+    ###################
+    # Sampling routines
+    #
+
+    # High fidelity snapshots
+    def SnapShot():
         # begin to sample the video with ffmpeg
         call(["ffmpeg", ""])
 
         # assert that ffmpeg exited successfully
 
-        # delete original video
 
-        # repack .warc.gz (Figure out way to add warc header indicating that
-        # the archive contains only a sample and not the original content)
+    # Low fidelity, shrinked video
+    def ShrinkRay():
+        # begin to shrink the video with ffmpeg
+        call(["ffmpeg", ""])
 
-        # should probably also report compression statistics to the tracker
+        # assert that ffmpeg exited successfully
 
-    else
-        raise Exception('Unknown item.')
-
-# After taking a native-resolution snapshot of the video, 
-#
-# 1.) shrink it down to a small but visible resolution.
-# 2.) cut the framerate down to a low but still motion-preserving number.
-#
-# Both of these parameters ought to scale with the length of the
-# source video. A relatively short video might be able to get away with
-# 480p resolution, but a longer one should be cut down to 360p or even
-# 240p resolution. A short video might have a higher preserved framerate,
-# but not a longer video.
-#
-# This low-fidelity data from ShrinkRay is paired with the high-fidelity
-# data from SnapShot to constitute a minimum viable dataset that might be
-# of use to someone in the future.
-class ShrinkRay(SimpleTask):
-    def __init__(self):
-        SimpleTask.__init__(self, "ShrinkRay")
-
-    def process(self, item):
-
-    # assert that this item is flagged for sampling. If not,
-    # return immediately. We don't want to butcher uploads that
-    # have been determined to be worth saving in their original
-    # state.
-    #
-    # (Presumably, the tracker is tagging these items as something
-    # appropriate. Alternately, one could create a "Phase 3" grab
-    # and know for a fact that we are only receiving videos that
-    # should be sampled)
-
-    item_name = item['item_name']
-    item_type, item_value = item_name.split(':', 1)
-
-    item['item_type'] = item_type
-    item['item_value'] = item_value
-
-    assert item_type in ('video-bulk')
-
-    if item_type == 'video-bulk':
-        #begin to shrink the video with ffmpeg
-
-        #should probably also report compression statistics to the tracker
-
-    else
-        raise Exception('Unknown item.')
-
-
-    # asdf
+    #end of Sample()
 
 class MoveFiles(SimpleTask):
     def __init__(self):
@@ -402,8 +388,7 @@ pipeline = Pipeline(
         },
         id_function=stats_id_function,
     ),
-    SnapShot(),
-    ShrinkRay(),
+    Sample(),
     MoveFiles(),
     LimitConcurrent(NumberConfigValue(min=1, max=4, default="1",
         name="shared:rsync_threads", title="Rsync threads",
