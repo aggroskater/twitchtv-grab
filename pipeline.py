@@ -172,10 +172,11 @@ class Sample(SimpleTask):
     # have been determined to be worth saving in their original
     # state.
     #
-    # (Presumably, the tracker is tagging these items as something
+    # Presumably, the tracker is tagging these items as something
     # appropriate. Alternately, one could create a "Phase 3" grab
     # and know for a fact that we are only receiving videos that
-    # should be sampled)
+    # should be sampled. In which case, one may skip the item_type
+    # check and proceed directly to sampling.
 
     item_name = item['item_name']
     item_type, item_value = item_name.split(':', 1)
@@ -183,40 +184,51 @@ class Sample(SimpleTask):
     item['item_type'] = item_type
     item['item_value'] = item_value
 
-    assert item_type in ('video-bulk')
+    assert item_type in ('video-bulk', 'url-bulk')
 
     # unpack warc, call samplers, repack warc
-    if item_type == 'video-bulk':
+    if item_type == 'video-bulk' || 'url-bulk':
+
         # At this point, wget has already dropped a .warc.gz file. Need to
         # unpack it.
 
-            # Oh dear. It's looking like manipulating the warc file would
-            # require more careful deliberation than just "sample the data
-            # and put it back into the warc." Lots of metadata.
-            #
-            # http://warc.readthedocs.org/en/latest/
-            #
-            # It looks like "WARC-Truncated" is the named field we would want
-            # according to the WARC spec:
-            #
-            # http://bibnum.bnf.fr/WARC/WARC_ISO_28500_version1_latestdraft.pdf
-            #
-            # Could rename whichever record in the .warc.gz holds the flv
-            # (or other video file)
-
-        # Now, create directories
-
-        # Preparation done. Call SnapShot() and ShrinkRay() samplers.
-
-        # Sampling done. Delete original video
-
-        # repack .warc.gz 
+        # Oh dear. It's looking like manipulating the warc file would
+        # require more careful deliberation than just "sample the data
+        # and put it back into the warc." Lots of metadata.
+        #
+        # http://warc.readthedocs.org/en/latest/
+        #
+        # It looks like "WARC-Truncated" is the named field we would want
+        # according to the WARC spec:
+        #
+        # http://bibnum.bnf.fr/WARC/WARC_ISO_28500_version1_latestdraft.pdf
+        #
+        # Could rename whichever record in the .warc.gz holds the flv
+        # (or other video file)
+        # 
+        # Planned method of attack:
+        #
+        # 0.) Unpack the .warc.gz
+        # 1.) Extract the video payload of the original record.
+        # 2.) Sample the video payload with native-resolution snapshots.
+        # (SnapShot() helper) 
+        # 3.) Shrink the video payload. (ShrinkRay() helper)
+        # 4.) Create new record with "conversion" profile, 
+        # referencing the original record with WARC-Refers-To header. Store
+        # this snapshot material in the new record (in a tarball or
+        # something? Would a metadata record be useful to describe how to
+        # handle the tarball? (Lots of different ways to display slideshows,
+        # which is basically what this is.))
+        # 5.) Replace original record payload with shrunken payload, mark
+        # the original record as WARC-Truncated.
+        # 6.) Repack the .warc.gz
 
         # should probably also report compression statistics to the tracker
 
-    # Item type is not marked as "video-bulk" from tracker
+    # Item type is not marked as "video-bulk" from tracker.
+    # Carry on. Nothing to do here.
     else
-        raise Exception('Unknown item.')
+        return;
 
     ###################
     # Sampling routines
@@ -224,7 +236,12 @@ class Sample(SimpleTask):
 
     # High fidelity snapshots
     def SnapShot():
-        # begin to sample the video with ffmpeg
+
+        # figure out length of video and develop native-resolution frame
+        # sampling rate based off of this length.
+
+        # begin to sample the video with ffmpeg using options determined
+        # from the length of video
         call(["ffmpeg", ""])
 
         # assert that ffmpeg exited successfully
@@ -232,7 +249,12 @@ class Sample(SimpleTask):
 
     # Low fidelity, shrinked video
     def ShrinkRay():
-        # begin to shrink the video with ffmpeg
+
+        # figure out length of video and develop number of frames to
+        # drop out of every FPS interval.
+
+        # begin to shrink the video with ffmpeg using options determined
+        # from length of video
         call(["ffmpeg", ""])
 
         # assert that ffmpeg exited successfully
