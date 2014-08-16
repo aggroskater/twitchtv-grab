@@ -225,6 +225,9 @@ class Sample(SimpleTask):
 
         # NOTE TO SELF: the payloads of record objects INCLUDE the HTTP
         # response headers before the actual content response.
+        # NOTE TO SELF: Can extract uncompressed payloads directly from
+        # compressed warcs (.warc.gz files) ; hoping that writing records
+        # is similarly capable.
 
         # should probably also report compression statistics to the tracker
 
