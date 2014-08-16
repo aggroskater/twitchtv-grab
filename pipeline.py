@@ -223,6 +223,9 @@ class Sample(SimpleTask):
         # the original record as WARC-Truncated.
         # 6.) Repack the .warc.gz
 
+        # NOTE TO SELF: the payloads of record objects INCLUDE the HTTP
+        # response headers before the actual content response.
+
         # should probably also report compression statistics to the tracker
 
     # Item type is not marked as "video-bulk" from tracker.
