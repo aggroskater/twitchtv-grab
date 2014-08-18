@@ -37,14 +37,14 @@ for record in f:
             print "WARC-Identified-Payload-Type: ", record['warc-identified-payload-type']
 
 # grab the payload
-    if long(record['Content-Length']) >= 500000:
-        print "Time to grab the payload."
-        tempfile = open("intermediate.flv", 'wb')
-        print "Writing to intermediate.flv"
-        for line in record.payload:
-            tempfile.write(line)
-        print "Done writing to intermediate.flv"    
-        tempfile.close()
+#    if long(record['Content-Length']) >= 500000:
+#        print "Time to grab the payload."
+#        tempfile = open("intermediate.flv", 'wb')
+#        print "Writing to intermediate.flv"
+#        for line in record.payload:
+#            tempfile.write(line)
+#        print "Done writing to intermediate.flv"    
+#        tempfile.close()
 
 # change headers
 #    temp = record['content-type']
@@ -78,7 +78,7 @@ for record in f:
         print "Found long content-length. Truncating..."
         new_payload = StringIO()
         decrement = 25
-        #Grab 25 lines
+        #Grab some lines
         for line in record.payload:
             new_payload.write(line)
             decrement -= 1
