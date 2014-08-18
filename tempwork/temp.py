@@ -9,9 +9,10 @@ from cStringIO import StringIO #for converting payloads into binary strings
 # WARCReader object, which in turn invokes a WARCHeader object (and WARCRecord
 # object?), which is ultiamtely what we want to look at to identify records.
 #f = warc.open("twitchtv-393d967f1c17b787e5f0756907b6e514621f16c2-20140815-115402.warc.gz")
-f = warc.open("test.warc.gz")
+#f = warc.open("test.warc.gz")
 #f = warc.open("cloned.warc.gz")
 #f = warc.open("wtf.warc.gz")
+f = warc.open("twitchtv-8bbd60023627ec4a666c026a38b0b587bcf9fcb3-20140817-233758.warc.gz")
 
 #print "f is: ", f
 
@@ -36,13 +37,14 @@ for record in f:
             print "WARC-Identified-Payload-Type: ", record['warc-identified-payload-type']
 
 # grab the payload
-#    if record['Content-Length'] == "706332742":
-#        print "Time to grab the payload."
-#        file = open("temp_from_gz.flv", 'wb')
-#        print "Writing to temp_from_gz.flv"
-#        for line in record.payload:
-#            file.write(line)
-#        print "Done writing to temp_from_gz.flv"    
+    if long(record['Content-Length']) >= 500000:
+        print "Time to grab the payload."
+        tempfile = open("intermediate.flv", 'wb')
+        print "Writing to intermediate.flv"
+        for line in record.payload:
+            tempfile.write(line)
+        print "Done writing to intermediate.flv"    
+        tempfile.close()
 
 # change headers
 #    temp = record['content-type']
@@ -62,7 +64,7 @@ for record in f:
 
     new_header = warc.WARCHeader(record.header)
 
-    if record['content-length'] != "706332742":
+    if long(record['content-length']) < 500000:
 
         print "Copying payload..."
         new_payload = StringIO()
@@ -75,7 +77,13 @@ for record in f:
     else:
         print "Found long content-length. Truncating..."
         new_payload = StringIO()
-        new_payload.write("")
+        decrement = 25
+        #Grab 25 lines
+        for line in record.payload:
+            new_payload.write(line)
+            decrement -= 1
+            if decrement == 0:
+                break
         new_payload.seek(0)
         print "Done truncating."
 

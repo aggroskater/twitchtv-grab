@@ -91,3 +91,7 @@ and give the new file the same name? That sounds positively braindead.)
 
 In any case, I'm getting relatively comfortable with the warc python
 library.
+
+---------
+
+That's enough for tonight.
