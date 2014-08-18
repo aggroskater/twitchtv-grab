@@ -37,14 +37,14 @@ for record in f:
             print "WARC-Identified-Payload-Type: ", record['warc-identified-payload-type']
 
 # grab the payload
-#    if long(record['Content-Length']) >= 500000:
-#        print "Time to grab the payload."
-#        tempfile = open("intermediate.flv", 'wb')
-#        print "Writing to intermediate.flv"
-#        for line in record.payload:
-#            tempfile.write(line)
-#        print "Done writing to intermediate.flv"    
-#        tempfile.close()
+    if long(record['Content-Length']) >= 500000:
+        print "Time to grab the payload."
+        tempfile = open("intermediate.flv", 'wb')
+        print "Writing to intermediate.flv"
+        for line in record.payload:
+            tempfile.write(line)
+        print "Done writing to intermediate.flv"    
+        tempfile.close()
 
 # change headers
 #    temp = record['content-type']
@@ -79,12 +79,16 @@ for record in f:
         new_payload = StringIO()
         decrement = 25
         #Grab some lines
+        print "Gonna grab some lines. Decrement: ", decrement
         for line in record.payload:
+            print "Grabbing a line."
             new_payload.write(line)
             decrement -= 1
+            print "Decrement: ", decrement
             if decrement == 0:
                 break
         new_payload.seek(0)
+        tempfile.close()
         print "Done truncating."
 
     # set defaults to false so that the warc library doesn't add headers
