@@ -95,3 +95,13 @@ library.
 ---------
 
 That's enough for tonight.
+
+--------
+
+I suspect this is why, when I extract the payload to a separate file,
+the payload appears to have "disappeared" when I attempt to simply
+truncate it later in the code.
+
+https://stackoverflow.com/questions/231767/what-does-the-yield-keyword-do-in-python
+
+The pesky "yield" keyword.
