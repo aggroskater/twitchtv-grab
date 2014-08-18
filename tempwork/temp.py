@@ -9,12 +9,13 @@ from cStringIO import StringIO #for converting payloads into binary strings
 # WARCReader object, which in turn invokes a WARCHeader object (and WARCRecord
 # object?), which is ultiamtely what we want to look at to identify records.
 #f = warc.open("twitchtv-393d967f1c17b787e5f0756907b6e514621f16c2-20140815-115402.warc.gz")
-#f = warc.open("test.warc.gz")
-f = warc.open("cloned.warc.gz")
+f = warc.open("test.warc.gz")
+#f = warc.open("cloned.warc.gz")
+#f = warc.open("wtf.warc.gz")
 
 #print "f is: ", f
 
-#newfile = warc.open("cloned.warc.gz", "w")
+newfile = warc.open("truncated.warc.gz", "w")
 
 #print "newfile is: ", newfile
 
@@ -28,7 +29,7 @@ for record in f:
     print "Content-Length: ", record['Content-Length']
     
     for key in record.header.keys():
-        print key, ": ",record[key]
+#        print key, ": ",record[key]
         if key == "warc-target-uri":
             print "WARC-Target-URI:", record['warc-target-uri']
         if key == "warc-identified-payload-type":
@@ -59,28 +60,37 @@ for record in f:
 
 # copy-paste records to new file
 
-#    new_header = warc.WARCHeader(record.header)
+    new_header = warc.WARCHeader(record.header)
 
-#    print "Copying payload..."
-#    new_payload = StringIO();
-#    for line in record.payload:
-#        new_payload.write(line)
-    #if we don't seek back to 0, new_payload.read() is empty
-#    new_payload.seek(0)
-#    print "Done copying payload."
+    if record['content-length'] != "706332742":
+
+        print "Copying payload..."
+        new_payload = StringIO()
+        for line in record.payload:
+            new_payload.write(line)
+        #if we don't seek back to 0, new_payload.read() is empty
+        new_payload.seek(0)
+        print "Done copying payload."
+
+    else:
+        print "Found long content-length. Truncating..."
+        new_payload = StringIO()
+        new_payload.write("")
+        new_payload.seek(0)
+        print "Done truncating."
 
     # set defaults to false so that the warc library doesn't add headers
     # (incidentally, wget-lua probably *should* be setting the
     # warc-payload-digest header, but that is neither here nor there at the
     # moment)
-#    new_rec = warc.WARCRecord(payload=new_payload.read(), headers=new_header, defaults=False)
+    new_rec = warc.WARCRecord(payload=new_payload.read(), headers=new_header, defaults=False)
 
-#    print "Copying record to new .warc.gz"
-#    newfile.write_record(new_rec)
-#    print "Done copying record to new .warc.gz"
+    print "Copying record to new .warc.gz"
+    newfile.write_record(new_rec)
+    print "Done copying record to new .warc.gz"
 
     print "\n\n"
 
-#newfile.close()
+newfile.close()
 
 raise SystemExit
