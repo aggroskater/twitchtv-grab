@@ -66,3 +66,28 @@ objects into new files, but not perfectly. The objects seem to match, but
 somewhere in the process, I suspect some extra whitespace, or newlines,
 or carriage returns, or *something* is getting added in, making the copied
 .warc.gz slightly different from the source.
+
+-------
+
+![FFFFFFFUUUUUUUUUUUU](https://i.imgur.com/ALXK2wY.png "FFFFFFFUUUUUUUUUUUU")
+
+So, it appears when compressing with gunzip with multiple members, each member
+is delimited by an instance of the title of the collection. I.e., a
+"collection.gz" file with multiple members will have "collection.gz" as a
+string in the binary of the file (probably along with some kind of iterator)
+prior to each member. My initial file was "test.warc.gz". My new file was
+"cloned.warc.gz". The "test.warc.gz" had five members in it (WARCFiles).
+Guess how many bytes bigger the "cloned.warc.gz" file was than the
+"test.warc.gz" file:
+
+    10 bytes
+
+Yep. A cursory glance in a hex editor, and all of the records basically look
+identical.
+
+However, now I can't use crypto digests to verify that we have a genuine
+copy (unless, maybe, I rename the source file prior to acting on it,
+and give the new file the same name? That sounds positively braindead.)
+
+In any case, I'm getting relatively comfortable with the warc python
+library.
