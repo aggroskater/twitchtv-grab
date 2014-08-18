@@ -3,6 +3,7 @@
 import warc
 from cStringIO import StringIO #for converting payloads into binary strings
 # that reside in-memory rather than on-file
+import os #for file length
 
 # f will hold array of records?
 # No. f holds a WARCFile object, and has an iterator that invokes a
@@ -43,8 +44,19 @@ for record in f:
         print "Writing to intermediate.flv"
         for line in record.payload:
             tempfile.write(line)
-        print "Done writing to intermediate.flv"    
-        tempfile.close()
+        print "Done writing to intermediate.flv"   
+        tempfile.close() 
+        # put the payload back
+        tempfile2 = open("intermediate.flv", 'rb')
+        data = tempfile2.read()
+        stream = StringIO(data)
+        tempfile2.close()
+        stream.seek(0, os.SEEK_END)
+        thelength = stream.tell()
+        stream.seek(0)
+        record.payload = warc.utils.FilePart(fileobj=stream,length=thelength)
+        #stream.close()
+        # "IO Operation on a closed file"
 
 # change headers
 #    temp = record['content-type']
