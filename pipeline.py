@@ -55,6 +55,9 @@ if not WGET_LUA:
 # Determine if FFMPEG is available
 # Should probably utilize an ffmpeg build (or source) distributed from the
 # repo to avoid nasty API incompatibilities between FFMPEG versions.
+# However, if the options used are relatively simple, using distro-provided
+# ffmpeg builds shouldn't be too problematic. Just be sure to add a metadata
+# WARCRecord indicating the version string of the ffmpeg that is used.
 FFMPEG = find_executable(
     "ffmpeg",
     ["ffmpeg version 2"],
@@ -67,8 +70,6 @@ FFMPEG = find_executable(
 
 if not FFMPEG:
     raise Exception("No usable ffmpeg found.")
-
-exit();
 
 ###########################################################################
 # The version number of this pipeline definition.

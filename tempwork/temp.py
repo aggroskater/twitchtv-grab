@@ -137,6 +137,26 @@ writetheflv.write(theflv)
 
 writetheflv.close()
 
+# Start sampling the video.
+
+# snapshot
+call("ffmpeg","-i samplethis.flv -r 1 -f image2 images%05d.png")
+
+# gunzip all the snapshots
+call("gunzip","")
+
+# shrink
+call("ffmpeg","-i samplethis.flv -c:v libvpx -b:v 500K -c:a libvorbis -s 432x243 shrunken-2.webm")
+
+# remove original file intermediates: "intermediate.int" and "samplethis.flv"
+
+
+
+# add the gunzip'd snapshots and shrunken video as WARCRecords to the newer
+# WARCFILE
+
+
+
 # All done
 
 stream.close() # close stream if it was opened (can't close it prior to closing
