@@ -39,15 +39,22 @@ for record in f:
 
 # grab the payload
     if long(record['Content-Length']) >= 500000:
+
+        #add truncated header
+        print "Adding warc-truncated header."
+        record['warc-truncated'] = "length"
+
+        #extract the payload
         print "Time to grab the payload."
-        tempfile = open("intermediate.flv", 'wb')
-        print "Writing to intermediate.flv"
+        tempfile = open("intermediate.int", 'wb')
+        print "Writing to intermediate.int"
         for line in record.payload:
             tempfile.write(line)
-        print "Done writing to intermediate.flv"   
-        tempfile.close() 
+        print "Done writing to intermediate.int"   
+        tempfile.close()
+ 
         # put the payload back
-        tempfile2 = open("intermediate.flv", 'rb')
+        tempfile2 = open("intermediate.int", 'rb')
         data = tempfile2.read()
         stream = StringIO(data)
         tempfile2.close()
@@ -115,6 +122,27 @@ for record in f:
 
     print "\n\n"
 
-newfile.close()
+# Now, we need to convert the flv, and add conversion records
+
+# Our "payload.flv" is not quite an flv yet; the payload still includes the
+# HTTP Response headers. We need to grep for "CRLFCRLF" and then chop off
+# anything prior to it, including it, leaving nothing but the flv file for
+# ffmpeg to work with.
+
+thefile = open("intermediate.int").read() # NOT A FILE; just a "str"
+theflv = thefile.split('\r\n\r\n')[1]
+
+writetheflv = open("samplethis.flv", "w")
+writetheflv.write(theflv)
+
+writetheflv.close()
+
+# All done
+
+stream.close() # close stream if it was opened (can't close it prior to closing
+               # warcfile because FilePart in the warc library continues to use
+               # the stream; but wouldn't it fall out of scope anyway outside
+               # of the for-loop?)
+newfile.close()# The new warcfile is finished.
 
 raise SystemExit
