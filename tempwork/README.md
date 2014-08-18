@@ -39,8 +39,30 @@ I'm going to experiment with something like this:
 
     import warc
     f = warc.open("output.warc.gz", "w")
-    header = warc.WARCHeader(existing_record.headers)
+    header = warc.WARCHeader(existing_record.header)
     record = warc.WARCRecord(header, existing_record.payload)
     f.write_record(record)
 
 But I've got family functions to attend. So, later.
+
+--------
+
+If someWARCRecordObject.payload is going to be of type FilePart, then
+why would other parts of the library expect strings? We can use str()
+to stringify the object, but sheesh. I'm probably still missing something
+here.
+
+Inded. I am missing something. Because stringifying the instance just
+spits out a string describing the object:
+
+    <warc.utils.FilePart instance at 0x7f5b8b169710>
+
+Not helpful at all.
+
+--------
+
+Now I'm stuck at a point where I'm able to more-or-less copy WARCRecord
+objects into new files, but not perfectly. The objects seem to match, but
+somewhere in the process, I suspect some extra whitespace, or newlines,
+or carriage returns, or *something* is getting added in, making the copied
+.warc.gz slightly different from the source.
