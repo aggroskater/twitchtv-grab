@@ -3,7 +3,7 @@
 import warc
 from cStringIO import StringIO #for converting payloads into binary strings
 # that reside in-memory rather than on-file
-import os #for file length
+import os #for file length, setting environment variables
 from subprocess import call #for executing ffmpeg
 import shlex #for properly parsing command lines for insertion into call()s
 import glob #for grabbing all *.jpg files
@@ -20,7 +20,9 @@ f = warc.open("twitchtv-8bbd60023627ec4a666c026a38b0b587bcf9fcb3-20140817-233758
 
 #print "f is: ", f
 
-newfile = warc.open("truncated.warc.gz", "w")
+#newfile = open("truncated.warc.gz","w")
+#newfile = warc.gzip2.GzipFile(filename="truncated.warc.gz", mode="w")
+newfile = warc.open("truncated.warc.gz","w")
 
 #print "newfile is: ", newfile
 
@@ -29,6 +31,7 @@ newfile = warc.open("truncated.warc.gz", "w")
 # content-length). Others, like "warc-target-uri", might not be, so need to
 # make sure it exists before asking for it.
 for record in f:
+
     print "WARC-Type: ", record['warc-type']
     print "WARC-Content-Type: ", record['content-type']
     print "Content-Length: ", record['Content-Length']
@@ -86,6 +89,8 @@ for record in f:
 
     new_header = warc.WARCHeader(record.header)
 
+    truncated_flag = None
+
     if long(record['content-length']) < 500000:
 
         print "Copying payload..."
@@ -110,7 +115,10 @@ for record in f:
             if decrement == 0:
                 break
         new_payload.seek(0)
-        tempfile.close()
+        truncated_flag = True
+
+        # not sure what this was doing here.
+        #tempfile.close()
         print "Done truncating."
 
     # set defaults to false so that the warc library doesn't add headers
@@ -119,6 +127,24 @@ for record in f:
     # moment)
     new_rec = warc.WARCRecord(payload=new_payload.read(), headers=new_header, defaults=False)
 
+    if truncated_flag:
+
+        print "Adjusting content-length header"
+
+        # From page 9 of the ISO WARC Standard:
+        #
+        # "The WARC-Truncated field may be used on any WARC record. The WARC
+        # field Content-Length shall still report the actual truncated size of
+        # the record block."
+
+        # Get the length of the truncated content-block and set
+        # Content-Length header appropriately
+        new_payload.seek(0)
+        new_payload.seek(0, os.SEEK_END)
+        thelength = new_payload.tell()
+        new_rec['content-length'] = str(thelength)
+        new_payload.seek(0)
+ 
     print "Copying record to new .warc.gz"
     newfile.write_record(new_rec)
     print "Done copying record to new .warc.gz"
@@ -152,7 +178,9 @@ writetheflv.close()
 
 # Start sampling the video.
 
-print "Getting snapshots."
+print "********************* \n\n Getting snapshots. \n\n *********************"
+
+os.environ["FFREPORT"] = "file=ffmpeg-snapshots.log"
 
 # snapshot
 # This is the "proper" way to handle complex command lines with lots of args
@@ -160,7 +188,7 @@ print "Getting snapshots."
 ffmpegsnapshotargs = shlex.split("ffmpeg -i samplethis.flv -vf fps=fps=1/15 -f image2 -q:v 1 images%05d.jpg")
 call(ffmpegsnapshotargs)
 
-print "Compressing snapshots."
+print "********************* \n\n Compressing snapshots. \n\n *********************"
 
 imagelist = glob.glob("*.jpg")
 imageliststring = ' '.join(imagelist)
@@ -175,7 +203,9 @@ rmcommand = "rm " + imageliststring
 rmargs = shlex.split(rmcommand)
 call(rmargs)
 
-print "Shrinking. This is gonna take a while."
+print "********************* \n\n Shrinking Video. (This will take a while) \n\n *********************"
+
+os.environ["FFREPORT"] = "file=ffmpeg-shrinking.log"
 
 # shrink; using the webm format at this resolution cuts the file size by
 # *about* an order of magnitude, while still maintaining more-or-less
@@ -188,11 +218,13 @@ call(ffmpegshrinkargs)
 # The final size of snapshots and shrunken video is anywhere from a fifth to
 # a seventh of the original file size.
 
-print "Removing intermediate files now that final sampled outputs are ready."
+print "********************* \n\n Removing temporary files \n\n *********************"
 
 # remove original file intermediates: "intermediate.int" and "samplethis.flv"
 rmargs = shlex.split("rm intermediate.int samplethis.flv")
 call(rmargs)
+
+os.environ["FFREPORT"] = ""
 
 # add the gunzip'd snapshots and shrunken video as WARCRecords to the newer
 # WARCFILE
