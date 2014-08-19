@@ -6,6 +6,7 @@ from cStringIO import StringIO #for converting payloads into binary strings
 import os #for file length
 from subprocess import call #for executing ffmpeg
 import shlex #for properly parsing command lines for insertion into call()s
+import glob #for grabbing all *.jpg files
 
 # f will hold array of records?
 # No. f holds a WARCFile object, and has an iterator that invokes a
@@ -161,9 +162,18 @@ call(ffmpegsnapshotargs)
 
 print "Compressing snapshots."
 
+imagelist = glob.glob("*.jpg")
+imageliststring = ' '.join(imagelist)
+tarcommand = "tar -czvf snapshots.tar.gz " + imageliststring
+
 # compress all the snapshots
-tarargs = shlex.split("tar -czvf snapshots.tar.gz *.jpg")
+tarargs = shlex.split(tarcommand)
 call(tarargs)
+
+# delete jpgs
+rmcommand = "rm " + imageliststring
+rmargs = shlex.split(rmcommand)
+call(rmargs)
 
 print "Shrinking. This is gonna take a while."
 
@@ -181,11 +191,16 @@ call(ffmpegshrinkargs)
 print "Removing intermediate files now that final sampled outputs are ready."
 
 # remove original file intermediates: "intermediate.int" and "samplethis.flv"
-rmargs = shlex.split("rm intermediate.int samplethis.flv *.jpg")
+rmargs = shlex.split("rm intermediate.int samplethis.flv")
 call(rmargs)
 
 # add the gunzip'd snapshots and shrunken video as WARCRecords to the newer
 # WARCFILE
+#
+# According to spec, the Content-Length of a content-block in a gzipped
+# warcfile corresponds to the COMPRESSED LENGTH, not the uncompressed length.
+# So we'll need to get that compressed length once we've added the record,
+# and set the Content-Length header appropriately.
 
 
 
