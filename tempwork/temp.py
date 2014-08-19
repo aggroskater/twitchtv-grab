@@ -4,6 +4,8 @@ import warc
 from cStringIO import StringIO #for converting payloads into binary strings
 # that reside in-memory rather than on-file
 import os #for file length
+from subprocess import call #for executing ffmpeg
+import shlex #for properly parsing command lines for insertion into call()s
 
 # f will hold array of records?
 # No. f holds a WARCFile object, and has an iterator that invokes a
@@ -122,6 +124,16 @@ for record in f:
 
     print "\n\n"
 
+# Should probably delete old warc at this point, since new warcfile has all
+# of the old records, and we've already got another copy of the main
+# payload. If we proceed to write out the full newfile with the shrunken
+# payload before deleting the old warc, we'll basically be using nearly
+# 3x the interim diskspace rather than 2x. (Don't get me wrong, I'd love
+# to have more of a generator-like setup that negates the need to use
+# twice the disk space, but it's beyond the scope of my abilities at the
+# moment and I don't think I'd be able to get up to speed before the
+# deadline for this project drops (August 27 2014))
+
 # Now, we need to convert the flv, and add conversion records
 
 # Our "payload.flv" is not quite an flv yet; the payload still includes the
@@ -139,18 +151,38 @@ writetheflv.close()
 
 # Start sampling the video.
 
+print "Getting snapshots."
+
 # snapshot
-call("ffmpeg","-i samplethis.flv -r 1 -f image2 images%05d.png")
+# This is the "proper" way to handle complex command lines with lots of args
+# https://stackoverflow.com/questions/8581140/python-subprocess-call-with-arguments-having-multiple-quotations
+ffmpegsnapshotargs = shlex.split("ffmpeg -i samplethis.flv -vf fps=fps=1/15 -f image2 -q:v 1 images%05d.jpg")
+call(ffmpegsnapshotargs)
 
-# gunzip all the snapshots
-call("gunzip","")
+print "Compressing snapshots."
 
-# shrink
-call("ffmpeg","-i samplethis.flv -c:v libvpx -b:v 500K -c:a libvorbis -s 432x243 shrunken-2.webm")
+# compress all the snapshots
+tarargs = shlex.split("tar -czvf snapshots.tar.gz *.jpg")
+call(tarargs)
+
+print "Shrinking. This is gonna take a while."
+
+# shrink; using the webm format at this resolution cuts the file size by
+# *about* an order of magnitude, while still maintaining more-or-less
+# perfectly crisp detail and motion. I'm thinking we don't need to drop
+# frames, and that cutting the resolution down to this ~240P-level
+# resolution is good enough.
+ffmpegshrinkargs = shlex.split("ffmpeg -i samplethis.flv -c:v libvpx -b:v 500K -c:a libvorbis -s 432x243 shrunken-to-webm.webm")
+call(ffmpegshrinkargs)
+
+# The final size of snapshots and shrunken video is anywhere from a fifth to
+# a seventh of the original file size.
+
+print "Removing intermediate files now that final sampled outputs are ready."
 
 # remove original file intermediates: "intermediate.int" and "samplethis.flv"
-
-
+rmargs = shlex.split("rm intermediate.int samplethis.flv *.jpg")
+call(rmargs)
 
 # add the gunzip'd snapshots and shrunken video as WARCRecords to the newer
 # WARCFILE
