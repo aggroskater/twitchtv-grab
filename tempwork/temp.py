@@ -212,6 +212,10 @@ os.environ["FFREPORT"] = "file=ffmpeg-shrinking.log"
 # perfectly crisp detail and motion. I'm thinking we don't need to drop
 # frames, and that cutting the resolution down to this ~240P-level
 # resolution is good enough.
+
+# We really need to check for resolution and select an output resolution
+# appropriately; this one-liner only works for 16:9 inputs
+
 ffmpegshrinkargs = shlex.split("ffmpeg -i samplethis.flv -c:v libvpx -b:v 500K -c:a libvorbis -s 432x243 shrunken-to-webm.webm")
 call(ffmpegshrinkargs)
 
