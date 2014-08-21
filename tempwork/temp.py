@@ -178,7 +178,7 @@ writetheflv.close()
 
 # Start sampling the video.
 
-print "********************* \n\n Getting snapshots. \n\n *********************"
+print "********************* \n\n Getting snapshots. \n\n*********************"
 
 os.environ["FFREPORT"] = "file=ffmpeg-snapshots.log"
 
@@ -188,7 +188,7 @@ os.environ["FFREPORT"] = "file=ffmpeg-snapshots.log"
 ffmpegsnapshotargs = shlex.split("ffmpeg -i samplethis.flv -vf fps=fps=1/15 -f image2 -q:v 1 images%05d.jpg")
 call(ffmpegsnapshotargs)
 
-print "********************* \n\n Compressing snapshots. \n\n *********************"
+print "********************* \n\n Compressing snapshots. \n\n*********************"
 
 imagelist = glob.glob("*.jpg")
 imageliststring = ' '.join(imagelist)
@@ -203,7 +203,7 @@ rmcommand = "rm " + imageliststring
 rmargs = shlex.split(rmcommand)
 call(rmargs)
 
-print "********************* \n\n Shrinking Video. (This will take a while) \n\n *********************"
+print "********************* \n\n Shrinking Video. (This will take a while) \n\n*********************"
 
 os.environ["FFREPORT"] = "file=ffmpeg-shrinking.log"
 
@@ -222,7 +222,7 @@ call(ffmpegshrinkargs)
 # The final size of snapshots and shrunken video is anywhere from a fifth to
 # a seventh of the original file size.
 
-print "********************* \n\n Removing temporary files \n\n *********************"
+print "********************* \n\n Removing temporary files \n\n*********************"
 
 # remove original file intermediates: "intermediate.int" and "samplethis.flv"
 rmargs = shlex.split("rm intermediate.int samplethis.flv")
@@ -238,7 +238,16 @@ os.environ["FFREPORT"] = ""
 # So we'll need to get that compressed length once we've added the record,
 # and set the Content-Length header appropriately.
 
+ffmpegsampleheader = warc.WARCHeader({
+    "WARC-Type": "resource",
+    "Content-Type": "text/plain"
+    "WARC-Concurrent-To": "<urn:uuid:a8c7ef3d-16c5-476a-b35d-241ea429226c>"
+})
 
+ffmpeglogreader = open("ffmpeg-snapshots.log")
+ffmpeglogreaderlength = os.stat("ffmpeg-snapshots.log").st_size
+
+ffmpegsamplepayload = warc.utils.FilePart(payload=ffmpeglogreader,length=ffmpeglogreaderlength)
 
 # All done
 
