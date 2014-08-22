@@ -238,16 +238,38 @@ os.environ["FFREPORT"] = ""
 # So we'll need to get that compressed length once we've added the record,
 # and set the Content-Length header appropriately.
 
+# Add ffmpeg log records
 ffmpegsampleheader = warc.WARCHeader({
     "WARC-Type": "resource",
-    "Content-Type": "text/plain"
+    "Content-Type": "text/plain",
     "WARC-Concurrent-To": "<urn:uuid:a8c7ef3d-16c5-476a-b35d-241ea429226c>"
 })
+ffmpegsamplepayload = StringIO(open("ffmpeg-snapshots.log").read()).getvalue()
+ffmpegsamplerecord = warc.WARCRecord(headers=ffmpegsampleheader,payload=ffmpegsamplepayload)
+newfile.write_record(ffmpegsamplerecord)
 
-ffmpeglogreader = open("ffmpeg-snapshots.log")
-ffmpeglogreaderlength = os.stat("ffmpeg-snapshots.log").st_size
+ffmpegshrinkheader = warc.WARCHeader({
+    "WARC-Type": "resource",
+    "Content-Type": "text/plain",
+    "WARC-Concurrent-To": "<urn:uuid:a8c7ef3d-16c5-476a-b35d-241ea429226c>"
+})
+ffmpegshrinkpayload = StringIO(open("ffmpeg-shrinking.log").read()).getvalue()
+ffmpegshrinkrecord = warc.WARCRecord(headers=ffmpegshrinkheader,payload=ffmpegshrinkpayload)
+newfile.write_record(ffmpegshrinkrecord)
 
-ffmpegsamplepayload = warc.utils.FilePart(payload=ffmpeglogreader,length=ffmpeglogreaderlength)
+# Add ffmpeg snapshots and shrunken webm
+snapshotrecord = warc.WARCRecord(
+    headers = warc.WARCHeader({
+        "WARC-Type": "response",
+        "Content-Type": "video/webm"
+    }),
+    payload = StringIO(open("snapshots.tar.gz").read()).getvalue()
+)
+newfile.write_record(snapshotrecord)
+
+# remove ffmpeg logs
+call(shlex.split("rm ffmpeg-snapshots.log ffmpeg-shrinking.log"))
+
 
 # All done
 
