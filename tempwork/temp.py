@@ -24,6 +24,17 @@ f = warc.open("twitchtv-8bbd60023627ec4a666c026a38b0b587bcf9fcb3-20140817-233758
 #newfile = warc.gzip2.GzipFile(filename="truncated.warc.gz", mode="w")
 newfile = warc.open("truncated.warc.gz","w")
 
+# a few headers we need to grab for use in new records we will write in the
+# new warc file:
+# 
+# From the metadata record: WARC-Record-ID
+#
+#   This will be utilized in the additional resource records we write.
+#
+# From the truncated response record: WARC-Record-ID
+#
+#   This will be set as the "WARC-Refers-To" header in the conversion records.
+
 #print "newfile is: ", newfile
 
 # each record is an object, and each object has a header, which is a dictionary.
