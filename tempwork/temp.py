@@ -22,6 +22,10 @@ f = warc.open("twitchtv-8bbd60023627ec4a666c026a38b0b587bcf9fcb3-20140817-233758
 
 #newfile = open("truncated.warc.gz","w")
 #newfile = warc.gzip2.GzipFile(filename="truncated.warc.gz", mode="w")
+
+# If you open a new warcfile with warc.open, and of a filename ending in
+# "*.gz", then the warc library will handle writing the compressed data
+# to the gzip member files for you transparently.
 newfile = warc.open("truncated.warc.gz","w")
 
 # a few headers we need to grab for use in new records we will write in the
