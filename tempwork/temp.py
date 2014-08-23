@@ -26,12 +26,26 @@ newfile = warc.open("truncated.warc.gz","w")
 
 # a few headers we need to grab for use in new records we will write in the
 # new warc file:
+#
+# * From the warcinfo record: WARC-Record-ID
+#
+#   This will be utilized by resource records. These resource records will
+#   have their "WARC-Warcinfo-ID" headers set to this value.
 # 
-# From the metadata record: WARC-Record-ID
+# * From the metadata record: WARC-Record-ID
 #
-#   This will be utilized in the additional resource records we write.
+#   This will be utilized in the additional resource records we write. (The 
+#   resource records will contain logs from ffmpeg). These records will have
+#   their "WARC-Concurrent-To" header set to this value.
 #
-# From the truncated response record: WARC-Record-ID
+#   NOTE: WARC files are not constricted to a single metadata record. So, the
+#   phrase "the metadata record" is specific to this particular grab, which
+#   establishes a single metadata record, links it to the warcinfo record, and
+#   makes all other "metadata" (like logs) stay in separate "resource records"
+#   that are concurrent to this metadata record. A good practice, IMHO, but
+#   it's not mandated by the standard.
+#
+# * From the truncated response record: WARC-Record-ID
 #
 #   This will be set as the "WARC-Refers-To" header in the conversion records.
 
@@ -54,7 +68,7 @@ for record in f:
         if key == "warc-identified-payload-type":
             print "WARC-Identified-Payload-Type: ", record['warc-identified-payload-type']
 
-# grab the payload
+# grab the lengthy payload (that probably contains the video)
     if long(record['Content-Length']) >= 500000:
 
         #add truncated header
@@ -81,6 +95,11 @@ for record in f:
         record.payload = warc.utils.FilePart(fileobj=stream,length=thelength)
         #stream.close()
         # "IO Operation on a closed file"
+
+# adjust the warcinfo record to include additional information
+    else if (record['WARC-Type'] == "warcinfo"):
+        # gotta add another "software" key to the content-block of the
+        # warcinfo record that indicates the use of ffmpeg.
 
 # change headers
 #    temp = record['content-type']
