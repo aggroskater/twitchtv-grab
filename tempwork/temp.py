@@ -257,26 +257,42 @@ ffmpegshrinkpayload = StringIO(open("ffmpeg-shrinking.log").read()).getvalue()
 ffmpegshrinkrecord = warc.WARCRecord(headers=ffmpegshrinkheader,payload=ffmpegshrinkpayload)
 newfile.write_record(ffmpegshrinkrecord)
 
-# Add ffmpeg snapshots and shrunken webm
+# remove ffmpeg logs
+call(shlex.split("rm ffmpeg-snapshots.log ffmpeg-shrinking.log"))
+
+# Add ffmpeg snapshots record
 snapshotrecord = warc.WARCRecord(
     headers = warc.WARCHeader({
-        "WARC-Type": "response",
-        "Content-Type": "video/webm"
+        "WARC-Type": "conversion",
+        "Content-Type": "application/x-gtar"
     }),
     payload = StringIO(open("snapshots.tar.gz").read()).getvalue()
 )
 newfile.write_record(snapshotrecord)
 
-# remove ffmpeg logs
-call(shlex.split("rm ffmpeg-snapshots.log ffmpeg-shrinking.log"))
+# remove snapshots
+call(shlex.split("rm snapshots.tar.gz"))
 
+# Add ffmpeg shrunken record
+shrinkrecord = warc.WARCRecord(
+    headers = warc.WARCHeader({
+        "WARC-Type": "conversion",
+        "Content-Type": "video/webm"
+    }),
+    payload = StringIO(open("shrunken-to-webm.webm").read()).getvalue()
+)
+newfile.write_record(shrinkrecord)
+
+# remove shrunken webm.
+# call(shlex.split("rm shrunken-to-webm.webm")
 
 # All done
 
 stream.close() # close stream if it was opened (can't close it prior to closing
                # warcfile because FilePart in the warc library continues to use
                # the stream; but wouldn't it fall out of scope anyway outside
-               # of the for-loop?)
+               # of the for-loop? LOLNOPE. Python doesn't do block-level
+               # scoping)
 newfile.close()# The new warcfile is finished.
 
 raise SystemExit
