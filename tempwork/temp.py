@@ -53,9 +53,9 @@ newfile = warc.open("truncated.warc.gz","w")
 #
 #   This will be set as the "WARC-Refers-To" header in the conversion records.
 
-warcinfo-record-ID = ""
-metadata-record-ID = ""
-truncated-record-ID = ""
+warcinfo_record_ID = None
+metadata_record_ID = None 
+truncated_record_ID = None 
 
 #print "newfile is: ", newfile
 
@@ -80,7 +80,7 @@ for record in f:
     if long(record['Content-Length']) >= 500000:
 
         # grab the truncated record id (will use in later conversion records)
-        truncated-record-ID = record['warc-record-id']
+        truncated_record_ID = record['warc-record-id']
         #add truncated header
         print "Adding warc-truncated header."
         record['warc-truncated'] = "length"
@@ -107,17 +107,17 @@ for record in f:
         # "IO Operation on a closed file"
 
 # adjust the warcinfo record to include additional information
-    else if (record['WARC-Type'] == "warcinfo"):
+    elif (record['WARC-Type'] == "warcinfo"):
 
         # grab the record-id for later use in resource records
-        warcinfo-record-ID = record['warc-record-id']
+        warcinfo_record_ID = record['warc-record-id']
 
         # gotta add another "software" key to the content-block of the
         # warcinfo record that indicates the use of ffmpeg.
         #asdf
 
-    else if (record['WARC-Type'] == ""):
-        metadata-record-ID = record['warc-record-id']
+    elif (record['WARC-Type'] == "metadata"):
+        metadata_record_ID = record['warc-record-id']
 
 
 # change headers
@@ -290,9 +290,9 @@ os.environ["FFREPORT"] = ""
 # Add ffmpeg log records
 ffmpegsampleheader = warc.WARCHeader({
     "WARC-Type": "resource",
-    "WARC-Warcinfo-ID": warcinfo-record-ID,
+    "WARC-Warcinfo-ID": warcinfo_record_ID,
     "Content-Type": "text/plain",
-    "WARC-Concurrent-To": metadata-record-ID
+    "WARC-Concurrent-To": metadata_record_ID
 })
 ffmpegsamplepayload = StringIO(open("ffmpeg-snapshots.log").read()).getvalue()
 ffmpegsamplerecord = warc.WARCRecord(headers=ffmpegsampleheader,payload=ffmpegsamplepayload)
@@ -300,9 +300,9 @@ newfile.write_record(ffmpegsamplerecord)
 
 ffmpegshrinkheader = warc.WARCHeader({
     "WARC-Type": "resource",
-    "WARC-Warcinfo-ID": warcinfo-record-ID,
+    "WARC-Warcinfo-ID": warcinfo_record_ID,
     "Content-Type": "text/plain",
-    "WARC-Concurrent-To": metadata-record-ID
+    "WARC-Concurrent-To": metadata_record_ID
 })
 ffmpegshrinkpayload = StringIO(open("ffmpeg-shrinking.log").read()).getvalue()
 ffmpegshrinkrecord = warc.WARCRecord(headers=ffmpegshrinkheader,payload=ffmpegshrinkpayload)
@@ -316,7 +316,7 @@ snapshotrecord = warc.WARCRecord(
     headers = warc.WARCHeader({
         "WARC-Type": "conversion",
         "Content-Type": "application/x-gtar",
-        "WARC-Refers-To": truncated-record-ID
+        "WARC-Refers-To": truncated_record_ID
     }),
     payload = StringIO(open("snapshots.tar.gz").read()).getvalue()
 )
@@ -329,8 +329,8 @@ call(shlex.split("rm snapshots.tar.gz"))
 shrinkrecord = warc.WARCRecord(
     headers = warc.WARCHeader({
         "WARC-Type": "conversion",
-        "Content-Type": "video/webm"
-        "WARC-Refers-To": truncated-record-ID
+        "Content-Type": "video/webm",
+        "WARC-Refers-To": truncated_record_ID
     }),
     payload = StringIO(open("shrunken-to-webm.webm").read()).getvalue()
 )
