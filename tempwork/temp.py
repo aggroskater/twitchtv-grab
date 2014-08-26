@@ -114,7 +114,17 @@ for record in f:
 
         # gotta add another "software" key to the content-block of the
         # warcinfo record that indicates the use of ffmpeg.
-        #asdf
+
+        warcinfo_stream = StringIO()
+        for line in record.payload:
+            warcinfo_stream.write(line)
+        # leading \r\n\r\n is already present in the payload;
+        # just tack on the additional lines you need to like so:
+        warcinfo_stream.write("software: ffmpeg/2.3.1\r\n\r\n")
+        warcinfo_stream.seek(0, os.SEEK_END)
+        warcinfo_stream_len = warcinfo_stream.tell()
+        warcinfo_stream.seek(0)
+        record.payload = warc.utils.FilePart(fileobj=warcinfo_stream,length=warcinfo_stream_len)
 
 # grab the metadata record's warc-record-id for later resource records
     elif (record['WARC-Type'] == "metadata"):
@@ -123,6 +133,9 @@ for record in f:
 # BEGIN CREATING NEW RECORD
 
     # COPY HEADER
+    # Should we add defaults=False ? It seems that some additional headers
+    # are added in WARCHeader as well as WARCRecord. However, they don't
+    # seem harmful: digests and timestamps.
     new_header = warc.WARCHeader(record.header)
 
     # COPY PAYLOAD
