@@ -127,8 +127,8 @@ for record in f:
 
     # COPY PAYLOAD
 
-    # if the current record gets truncated, let the subsequent record
-    # creation know about it to set an appropriate header
+    # if the current record gets truncated, then set the content-length
+    # to the new, truncated length as per spec.
     truncated_flag = None
 
     # short record payloads
@@ -150,7 +150,7 @@ for record in f:
         #Grab some lines
 #        print "Gonna grab some lines. Decrement: ", decrement
         for line in record.payload:
-            print "Grabbing a line."
+#            print "Grabbing a line."
             new_payload.write(line)
             decrement -= 1
 #            print "Decrement: ", decrement
@@ -162,7 +162,7 @@ for record in f:
 
         # not sure what this was doing here.
         #tempfile.close()
-        print "Done truncating."
+#        print "Done truncating."
 
     # set defaults to false so that the warc library doesn't add headers
     # (incidentally, wget-lua probably *should* be setting the
@@ -175,7 +175,7 @@ for record in f:
 
     if truncated_flag:
 
-        print "Adjusting content-length header"
+#        print "Adjusting content-length header"
 
         # From page 9 of the ISO WARC Standard:
         #
