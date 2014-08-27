@@ -118,7 +118,7 @@ for record in f:
         warcinfo_stream = StringIO()
         for line in record.payload:
             warcinfo_stream.write(line)
-        # leading \r\n\r\n is already present in the payload; just seek back
+        # trailing \r\n\r\n is already present in the payload; just seek back
         # two bytes (yes, the second \r\n will get clobbered; potential unicode
         # byte-length issues here) and then tack on the additional lines you
         # need to like so:
