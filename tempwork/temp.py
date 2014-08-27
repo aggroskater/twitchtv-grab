@@ -118,8 +118,11 @@ for record in f:
         warcinfo_stream = StringIO()
         for line in record.payload:
             warcinfo_stream.write(line)
-        # leading \r\n\r\n is already present in the payload;
-        # just tack on the additional lines you need to like so:
+        # leading \r\n\r\n is already present in the payload; just seek back
+        # two bytes (yes, the second \r\n will get clobbered; potential unicode
+        # byte-length issues here) and then tack on the additional lines you
+        # need to like so:
+        warcinfo_stream.seek(-2,os.SEEK_END)
         warcinfo_stream.write("software: ffmpeg/2.3.1\r\n\r\n")
         warcinfo_stream.seek(0, os.SEEK_END)
         warcinfo_stream_len = warcinfo_stream.tell()
