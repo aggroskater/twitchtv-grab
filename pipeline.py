@@ -15,13 +15,24 @@ import subprocess
 import sys
 import time
 
+# for properly parsing command line strings for insertion into call()s
+import shlex
+# for globbing files in a given path
+import glob
+# for making subprocesses (ffmpeg, tar, etc)
+from subprocess import call
+# for file length
+import os
+# for in-memory binary strings (rather than on-file)
+from cStringIO import StringIO
+# for manipulating warc files (open, write, read, close, compress)
+import warc
+
 import seesaw
 from seesaw.externalprocess import WgetDownload
 from seesaw.pipeline import Pipeline
 from seesaw.project import Project
 from seesaw.util import find_executable
-
-import warc #for manipulating warc files (re-open, sample video, re-close)
 
 # check the seesaw version
 if StrictVersion(seesaw.__version__) < StrictVersion("0.1.5"):
@@ -76,7 +87,7 @@ if not FFMPEG:
 #
 # Update this each time you make a non-cosmetic change.
 # It will be added to the WARC files and reported to the tracker.
-VERSION = "20140809.03"
+VERSION = "20140827.01"
 USER_AGENT = 'ArchiveTeam'
 TRACKER_ID = 'twitchtv'
 TRACKER_HOST = 'tracker.archiveteam.org'
@@ -187,11 +198,58 @@ class Sample(SimpleTask):
 
     assert item_type in ('video-bulk', 'url-bulk')
 
-    # unpack warc, call samplers, repack warc
-    if item_type == 'video-bulk' || 'url-bulk':
+    # Item type is not marked as "video-bulk" from tracker.
+    # Carry on. Nothing to do here.
+    if item_type != 'video-bulk' || 'url-bulk':
+        return
 
-        # At this point, wget has already dropped a .warc.gz file. Need to
-        # unpack it.
+    # sample this item
+    else:
+
+        # remember where we started from so we can get back there and
+        # not mess up the expectations for the rest of stages in the
+        # pipeline
+        original_path = os.getcwd()
+
+        # get to item_dir ; begin work
+        os.chdir(item['item_dir'])
+
+        # we will need some data from the warcfile
+        warcinfo_record_ID = ""
+        metadata_record_ID = ""
+        truncated_record_ID = ""
+
+        # set up old and new warc files for reading and writing, respectively.
+        # If a file ends in *.gz for writing, the warc library handles gz
+        # compression transparently.
+        old_warc_file = warc.open("%(warc_file_base)s.warc.gz" % item)
+        new_warc_file = warc.open("%(warc_file_base)s-POSTPROCESSED.warc.gz" % item , "w")
+
+        # and here... we... go
+        for record in old_warc_file:
+
+            # Grab the lengthy payload (the flv file); if the content-length is
+            # longer than ~5MiB, and the record is of the "response" type, then
+            # this record *probably* has the flv file.
+            if ((long(record['Content-Length']) >= 5000000) && record['WARC-Type'] == "response"):
+
+                #asdf
+
+            # Adjust the warcinfo record to note that we also utilized ffmpeg
+            elif (record['WARC-Type'] == "warcinfo"):
+
+                #asdf
+
+            # Get the metadata record's warc-record-id for later resource
+            # records.
+            elif (record['WARC-Type'] == "metadata"):
+
+                metadata_record_ID = record['warc-record-id']
+
+        # end of "for record in old_warc_file"
+
+        # Extract the actual flv file; as of now, the "intermediate.int"
+        # still holds the response headers
 
         # Oh dear. It's looking like manipulating the warc file would
         # require more careful deliberation than just "sample the data
@@ -232,11 +290,6 @@ class Sample(SimpleTask):
 
         # should probably also report compression statistics to the tracker
 
-    # Item type is not marked as "video-bulk" from tracker.
-    # Carry on. Nothing to do here.
-    else
-        return;
-
     ###################
     # Sampling routines
     #
@@ -266,7 +319,7 @@ class Sample(SimpleTask):
 
         # assert that ffmpeg exited successfully
 
-    #end of Sample()
+    #end of class Sample(SimpleTask)
 
 class MoveFiles(SimpleTask):
     def __init__(self):
