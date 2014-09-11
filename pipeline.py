@@ -108,11 +108,6 @@ class CheckIP(SimpleTask):
     def process(self, item):
         # NEW for 2014! Check if we are behind firewall/proxy
 
-        raw_input("Press Enter to continue...")
-        # just going to return from this class for now to make sure Sample()
-        # is working.
-        return;
-
         if self._counter <= 0:
             item.log_output('Checking IP address.')
             result = socket.gethostbyname('twitch.tv')
