@@ -76,7 +76,8 @@ FFMPEG = find_executable(
         "/usr/bin/ffmpeg",
         "/usr/local/bin/ffmpeg",
         "./ffmpeg"
-    ]
+    ],
+    "-version"
 )
 
 if not FFMPEG:
@@ -106,6 +107,8 @@ class CheckIP(SimpleTask):
 
     def process(self, item):
         # NEW for 2014! Check if we are behind firewall/proxy
+
+        raw_input("Press Enter to continue...")
 
         if self._counter <= 0:
             item.log_output('Checking IP address.')
@@ -190,21 +193,20 @@ class Sample(SimpleTask):
     # should be sampled. In which case, one may skip the item_type
     # check and proceed directly to sampling.
 
-    item_name = item['item_name']
-    item_type, item_value = item_name.split(':', 1)
+        item_name = item['item_name']
+        item_type, item_value = item_name.split(':', 1)
 
-    item['item_type'] = item_type
-    item['item_value'] = item_value
+        item['item_type'] = item_type
+        item['item_value'] = item_value
 
-    assert item_type in ('video-bulk', 'url-bulk')
+        assert item_type in ('video-bulk', 'url-bulk')
 
-    # Item type is not marked as "video-bulk" from tracker.
-    # Carry on. Nothing to do here.
-    if item_type != 'video-bulk' || 'url-bulk':
-        return
+        # Item type is not marked as "video-bulk" from tracker.
+        # Carry on. Nothing to do here.
+        if item_type != 'video-bulk' or 'url-bulk':
+            return
 
-    # sample this item
-    else:
+        # ok. This is an item that needs to be sampled.
 
         # remember where we started from so we can get back there and
         # not mess up the expectations for the rest of stages in the
@@ -241,7 +243,7 @@ class Sample(SimpleTask):
             # Grab the lengthy payload (the flv file); if the content-length is
             # longer than ~5MiB, and the record is of the "response" type, then
             # this record *probably* has the flv file.
-            if ((long(record['Content-Length']) >= 5000000) && record['WARC-Type'] == "response"):
+            if ((long(record['Content-Length']) >= 5000000) and record['WARC-Type'] == "response"):
 
                 # need the record id of the original flv record. Will refernece
                 # it in truncated record.
@@ -344,22 +346,22 @@ class Sample(SimpleTask):
             else:
 
             #print "Found long content-length. Truncating..."
-            new_payload = StringIO()
-            decrement = 25
-            #Grab some lines
-            #print "Gonna grab some lines. Decrement: ", decrement
-            for line in record.payload:
-                #print "Grabbing a line."
-                new_payload.write(line)
-                decrement -= 1
-                #print "Decrement: ", decrement
-                if decrement == 0:
-                    break
-            # be kind: rewind
-            new_payload.seek(0)
-            truncated_flag = True
+                new_payload = StringIO()
+                decrement = 25
+                #Grab some lines
+                #print "Gonna grab some lines. Decrement: ", decrement
+                for line in record.payload:
+                    #print "Grabbing a line."
+                    new_payload.write(line)
+                    decrement -= 1
+                    #print "Decrement: ", decrement
+                    if decrement == 0:
+                        break
+                # be kind: rewind
+                new_payload.seek(0)
+                truncated_flag = True
 
-            #print "Done truncating."
+                #print "Done truncating."
 
             # CREATE RECORD FROM HEADER AND PAYLOAD
 
@@ -434,7 +436,7 @@ class Sample(SimpleTask):
         ShrinkRay()
 
         # Clean up
-        print "********************* \n\n Removing temporary files; cleaning up \n\n*********************"
+        print("********************* \n\n Removing temporary files; cleaning up \n\n*********************")
         # remove original file intermediates: "intermediate.int" and "samplethis.flv"
         rmargs = shlex.split("rm intermediate.int samplethis.flv")
         call(rmargs)
@@ -454,7 +456,7 @@ class Sample(SimpleTask):
         # figure out length of video and develop native-resolution frame
         # sampling rate based off of this length.
 
-        print "********************* \n\n Getting snapshots. \n\n*********************"
+        print("********************* \n\n Getting snapshots. \n\n*********************")
 
         os.environ["FFREPORT"] = "file=ffmpeg-snapshots.log"
 
@@ -464,7 +466,7 @@ class Sample(SimpleTask):
         ffmpegsnapshotargs = shlex.split("ffmpeg -i samplethis.flv -vf fps=fps=1/15 -f image2 -q:v 1 images%05d.jpg")
         call(ffmpegsnapshotargs)
 
-        print "********************* \n\n Compressing snapshots. \n\n*********************"
+        print("********************* \n\n Compressing snapshots. \n\n*********************")
 
         imagelist = glob.glob("*.jpg")
         imageliststring = ' '.join(imagelist)
@@ -515,7 +517,7 @@ class Sample(SimpleTask):
         # figure out length of video and develop number of frames to
         # drop out of every FPS interval.
 
-        print "********************* \n\n Shrinking Video. (This will take a while) \n\n*********************"
+        print("********************* \n\n Shrinking Video. (This will take a while) \n\n*********************")
 
         os.environ["FFREPORT"] = "file=ffmpeg-shrinking.log"
 
