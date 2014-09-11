@@ -90,8 +90,10 @@ if not FFMPEG:
 # It will be added to the WARC files and reported to the tracker.
 VERSION = "20140827.01"
 USER_AGENT = 'ArchiveTeam'
-TRACKER_ID = 'twitchtv'
-TRACKER_HOST = 'tracker.archiveteam.org'
+#TRACKER_ID = 'twitchtv'
+#TRACKER_HOST = 'tracker.archiveteam.org'
+TRACKER_ID = 'twitchtv-grab'
+TRACKER_HOST = 'tracker.centosdevbox.com'
 
 
 ###########################################################################
@@ -132,6 +134,7 @@ class PrepareDirectories(SimpleTask):
         self.warc_prefix = warc_prefix
 
     def process(self, item):
+        raw_input("you gotta give me input")
         item_name = item["item_name"]
         escaped_item_name = hashlib.sha1(item_name).hexdigest()
         dirname = "/".join((item["data_dir"], escaped_item_name))
