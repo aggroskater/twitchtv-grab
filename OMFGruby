@@ -24,3 +24,7 @@ After all that mess, I think I've got the tracker running.
 Bonus points: It's the latest tracker from source.
 
 Did I mention I hate ruby?
+
+UPDATE: Well, something's going wrong in the app when it tries to get
+the ruby redis-client to eval() some long, complex query. Probably
+because I don't have a lot of the data in there that it's looking for.
